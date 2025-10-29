@@ -1,0 +1,7 @@
+.vscode/
+*.o
+*.i
+*.s
+*.map
+close
+main
