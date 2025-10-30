@@ -35,7 +35,8 @@ void *request_file_thread(void *arg)
             file_name[i] = 0;
         }
         printf("Please enter the file: ");
-        scanf("%s", file_name);
+        scanf("\n");
+        scanf("%[^\n]%*c", file_name);
 
         if (mq_send(client_mq, file_name, strlen(file_name), 0) == -1)
         {
