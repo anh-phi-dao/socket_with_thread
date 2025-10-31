@@ -7,7 +7,10 @@
 char buff[1024];
 int val_write;
 int val_read;
-
+/**
+ * @bug :pthread detach is blocked by scanf, after finishing scanf, then
+ * the kernel can detach thread
+ */
 int main()
 {
     if (init_client_message_queue() == MQ_OPEN_ERROR)

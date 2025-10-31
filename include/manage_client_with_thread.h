@@ -19,6 +19,19 @@ enum InitQueueState
     MQ_OPEN_SUCCESS
 };
 
+/**
+ * @brief init the message queue for the client
+ * @return MQ_OPEN_SUCCESS=0 when succes, MQ_OPEN_ERROR = -1
+ * when failing
+ */
 int init_client_message_queue();
+/**
+ * @brief Thread that request user to enter the name of the file and send the
+ * file name to second threads through message queue
+ */
 void *request_file_thread(void *arg);
+/**
+ * @brief Receive file name from message queue, send the file name to server and
+ * read the result
+ */
 void *client_transmit_recieve_thread(void *arg);
