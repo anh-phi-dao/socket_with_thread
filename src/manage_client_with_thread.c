@@ -116,25 +116,20 @@ void *client_transmit_recieve_thread(void *arg)
         }
         /*Read the TCP socket, if there are data or message from server, print out to terminal*/
         /*If the number of characters read from socket is 0, this means the server has closed*/
-        for (int i = 0; i < 5; i++)
-        {
 
-            val_read = read(client_fd, buff, 1024);
-            if (val_read > 0)
-            {
-                printf("Num of bytes read %d\n", val_read);
-                break;
-            }
-            else if (i == 4 && val_read == 0)
-            {
-                printf("Server has closed\n");
-                pthread_mutex_lock(&close_mutex);
-                sprintf(close_state, "Close");
-                pthread_mutex_unlock(&close_mutex);
-                close(client_fd);
-                return NULL;
-            }
-            sleep(1);
+        val_read = read(client_fd, buff, 1024);
+        if (val_read > 0)
+        {
+            printf("Num of bytes read %d\n", val_read);
+        }
+        else if (val_read == 0)
+        {
+            printf("Server has closed\n");
+            pthread_mutex_lock(&close_mutex);
+            sprintf(close_state, "Close");
+            pthread_mutex_unlock(&close_mutex);
+            close(client_fd);
+            return NULL;
         }
 
         printf("Read %s from server:\n\n%s", file_name, buff);
