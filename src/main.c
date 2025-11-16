@@ -2,7 +2,7 @@
 #include "socket.h"
 #include <sys/poll.h>
 
-#define SERVER_IP "192.168.27.167"
+#define SERVER_IP "127.0.0.1"
 
 char buff[1024];
 int val_write;
@@ -51,7 +51,6 @@ int main()
     }
 
     pthread_join(manage_client_threads[1], NULL);
-    pthread_detach(manage_client_threads[0]);
 
     close(client_fd);
     mq_close(client_mq);

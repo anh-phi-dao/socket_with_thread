@@ -2,7 +2,7 @@
 #include "socket.h"
 #include <sys/poll.h>
 
-#define SERVER_IP "192.168.27.167"
+#define SERVER_IP "127.0.0.1"
 
 char buff[1024];
 char file_name[100];

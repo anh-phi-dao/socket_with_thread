@@ -3,7 +3,10 @@
 mqd_t client_mq;
 struct mq_attr attr;
 pthread_t manage_client_threads[NUMBER_OF_THREAD];
+pthread_mutex_t close_mutex = PTHREAD_MUTEX_INITIALIZER;
+char close_state[20];
 
+/*init message queue*/
 int init_client_message_queue()
 {
     attr.mq_flags = 0;
@@ -24,27 +27,60 @@ int init_client_message_queue()
     return MQ_OPEN_SUCCESS;
 }
 
+/*Read from STANDARD INPUT and send file request to server*/
 void *request_file_thread(void *arg)
 {
     char file_name[100];
-
+    fd_set read_sel;
+    struct timeval time;
+    time.tv_sec = 0;
+    time.tv_usec = 1000;
+    int ret;
     while (1)
     {
         for (int i = 0; i < 100; i++)
         {
             file_name[i] = 0;
         }
-        printf("\nPlease enter the file: ");
-        scanf("\n");
-        scanf("%100[^\n]s", file_name);
-
-        if (mq_send(client_mq, file_name, strlen(file_name), 0) == -1)
+        write(STDOUT_FILENO, "\nPlease enter the file: ", 25);
+        /*check the standard input*/
+    check_again:
+        FD_ZERO(&read_sel);
+        FD_SET(STDIN_FILENO, &read_sel);
+        FD_SET(STDOUT_FILENO, &read_sel);
+        ret = select(1, &read_sel, NULL, NULL, &time);
+        if (ret == -1)
         {
-            perror("mq send");
-            printf("Request file thread with id:%lu\n", pthread_self());
+            perror("Error on select");
             return NULL;
         }
-        sleep(1);
+        /*if input has data ready to read, then send to tcp thread through queue*/
+        ret = FD_ISSET(STDIN_FILENO, &read_sel);
+        if (ret != 0)
+        {
+            scanf("\n");
+            scanf("%100[^\n]s", file_name);
+            if (mq_send(client_mq, file_name, strlen(file_name), 0) == -1)
+            {
+                perror("mq send");
+                printf("Request file thread with id:%lu\n", pthread_self());
+                return NULL;
+            }
+            sleep(1);
+        }
+        /*if there is close message from client, close the client*/
+        pthread_mutex_lock(&close_mutex);
+        if (strcmp(close_state, "Close") == 0)
+        {
+            printf("Closing this client\n");
+            pthread_mutex_unlock(&close_mutex);
+            return NULL;
+        }
+        pthread_mutex_unlock(&close_mutex);
+        if (ret == 0)
+        {
+            goto check_again;
+        }
     }
     return NULL;
 }
@@ -57,15 +93,9 @@ void *client_transmit_recieve_thread(void *arg)
     int val_read;
     while (1)
     {
-        for (int i = 0; i < 100; i++)
-        {
-            file_name[i] = 0;
-            buff[i] = 0;
-        }
-        for (int i = 100; i < 1024; i++)
-        {
-            buff[i] = 0;
-        }
+        memset(file_name, 0, strlen(file_name));
+        memset(buff, 0, strlen(buff));
+        /*if receive name*/
         if (mq_receive(client_mq, file_name, MAX_MSG_SIZE, NULL) == -1)
         {
             perror("mq send");
@@ -98,6 +128,9 @@ void *client_transmit_recieve_thread(void *arg)
             else if (i == 4 && val_read == 0)
             {
                 printf("Server has closed\n");
+                pthread_mutex_lock(&close_mutex);
+                sprintf(close_state, "Close");
+                pthread_mutex_unlock(&close_mutex);
                 close(client_fd);
                 return NULL;
             }

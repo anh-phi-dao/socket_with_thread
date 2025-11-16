@@ -2,6 +2,8 @@
 #include "socket.h"
 #include <mqueue.h>
 #include <unistd.h>
+#include <sys/poll.h>
+#include <sys/select.h>
 #include <pthread.h>
 
 #define MANAGE_SERVER_QUEUE_NAME "/server_queue"
